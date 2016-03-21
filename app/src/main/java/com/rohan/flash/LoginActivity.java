@@ -1,6 +1,8 @@
 package com.rohan.flash;
 
 import android.content.SharedPreferences;
+import android.location.Address;
+import android.location.Geocoder;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -8,6 +10,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.AutoCompleteTextView;
+
+import com.google.android.gms.maps.model.LatLng;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -18,6 +22,7 @@ import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -27,12 +32,14 @@ public class LoginActivity extends AppCompatActivity {
     AutoCompleteTextView phone,name,email;
     String Response = "";
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
         init();
+        Log.d("values",getLocationFromAddress("Ulsoor")+"");
     }
 
     private void init() {
@@ -133,6 +140,32 @@ public class LoginActivity extends AppCompatActivity {
 
             Log.d("Response", Response);
 
+            return null;
+        }
+    }
+
+    public LatLng getLocationFromAddress(String strAddress){
+
+        Geocoder coder = new Geocoder(this);
+        List<Address> address;
+        LatLng p1 = null;
+
+        try {
+            address = coder.getFromLocationName(strAddress,5);
+            Log.d("what","a:"+address);
+            if (address==null) {
+                return null;
+            }
+            Address location=address.get(0);
+            location.getLatitude();
+            location.getLongitude();
+
+            p1 = new LatLng( (location.getLatitude() ),
+                     (location.getLongitude()));
+
+            return p1;
+        } catch (IOException e) {
+            e.printStackTrace();
             return null;
         }
     }
