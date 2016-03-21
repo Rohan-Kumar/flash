@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Flash</string>
     <string name="api_key">AIzaSyBWeJ1fwwkoY9xu3tPqvkPkm2eBCtfD754</string>
+    <string name="title_activity_maps">Map</string>
 </resources>
