@@ -115,7 +115,7 @@ public class LoginActivity extends AppCompatActivity {
 
             URL url = null;
             try {
-                url = new URL("http://204.152.203.111/ec/");
+                url = new URL("http://204.152.203.111/ec/ambulance_signup.php");
                 HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
 
                 httpURLConnection.setDoInput(true);

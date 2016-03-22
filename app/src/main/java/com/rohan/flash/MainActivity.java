@@ -65,7 +65,6 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             address = coder.getFromLocationName(strAddress, 5);
-            Log.d("what", "a:" + address);
             if (address == null) {
                 return null;
             }
