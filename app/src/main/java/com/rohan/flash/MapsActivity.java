@@ -47,16 +47,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(MainActivity.f));
+
         GoogleDirection.withServerKey("AIzaSyDm0xyQGJ1mDIMezQZxpUjGbtadDpuhdiU")
-                .from(LoginActivity.route.get(0))
-                .to(LoginActivity.route.get(LoginActivity.route.size()-1))
+                .from(MainActivity.f)
+                .to(MainActivity.t)
                 .alternativeRoute(true)
                 .execute(new DirectionCallback() {
                     @Override
                     public void onDirectionSuccess(Direction direction, String rawBody) {
                         ArrayList<LatLng> directionPositionList = direction.getRouteList().get(0).getLegList().get(0).getDirectionPoint();
                         mMap.addPolyline(DirectionConverter.createPolyline(MapsActivity.this, directionPositionList, 5, Color.RED));
-
                     }
 
                     @Override
@@ -64,17 +65,5 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                     }
                 });
-//        // Add a marker in Sydney and move the camera
-//        LatLng sydney = new LatLng(-34, 151);
-//        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-////        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
-//        PolylineOptions rectLine = new PolylineOptions().width(3).color(
-//                Color.BLUE);
-//
-//        for (int i = 0; i < LoginActivity.route.size(); i++) {
-//            rectLine.add(LoginActivity.route.get(i));
-//        }
-//        Polyline polylin = mMap.addPolyline(rectLine);
-
     }
 }

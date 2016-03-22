@@ -17,12 +17,10 @@
             android:layout_height="wrap_content">
 
             <AutoCompleteTextView
-                android:id="@+id/userName"
+                android:id="@+id/hospitalName"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="UserName"
-                android:maxLines="1"
-                android:singleLine="true" />
+                android:hint="Hospital name" />
 
         </android.support.design.widget.TextInputLayout>
 
@@ -31,14 +29,10 @@
             android:layout_height="wrap_content">
 
             <AutoCompleteTextView
-                android:id="@+id/phoneNumber"
+                android:id="@+id/ambulanceId"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="PhoneNumber"
-                android:inputType="phone"
-                android:maxLength="10"
-                android:maxLines="1"
-                android:singleLine="true" />
+                android:hint="Ambulance ID"/>
 
         </android.support.design.widget.TextInputLayout>
 
@@ -47,11 +41,22 @@
             android:layout_height="wrap_content">
 
             <AutoCompleteTextView
-                android:id="@+id/emailID"
+                android:id="@+id/ambulanceRegNo"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Email Id"
-                android:inputType="textEmailAddress" />
+                android:hint="Ambulance Reg. No." />
+
+        </android.support.design.widget.TextInputLayout>
+
+        <android.support.design.widget.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <AutoCompleteTextView
+                android:id="@+id/ambulanceDriver"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Ambulance Driver" />
 
         </android.support.design.widget.TextInputLayout>
 

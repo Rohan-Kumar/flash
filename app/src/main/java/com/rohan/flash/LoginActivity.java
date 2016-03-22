@@ -1,5 +1,6 @@
 package com.rohan.flash;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Address;
@@ -34,10 +35,8 @@ public class LoginActivity extends AppCompatActivity {
 
     SharedPreferences preferences;
     SharedPreferences.Editor editor;
-    //    String name, email, id, mobile;
-    AutoCompleteTextView phone, name, email;
+    AutoCompleteTextView hosName,ambId,ambReg,ambDriver;
     String Response = "";
-    static ArrayList<LatLng> route =  new ArrayList<>();
 
 
     @Override
@@ -45,67 +44,70 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
+        startActivity(new Intent(LoginActivity.this, MainActivity.class));
+
         init();
-        Log.d("values", getLocationFromAddress("Ulsoor") + "");
     }
 
     private void init() {
-        name = (AutoCompleteTextView) findViewById(R.id.userName);
-        email = (AutoCompleteTextView) findViewById(R.id.emailID);
-        phone = (AutoCompleteTextView) findViewById(R.id.phoneNumber);
+
+        preferences = getSharedPreferences("Flash", Context.MODE_PRIVATE);
+        editor = preferences.edit();
+
+        hosName = (AutoCompleteTextView) findViewById(R.id.hospitalName);
+        ambId = (AutoCompleteTextView) findViewById(R.id.ambulanceId);
+        ambReg = (AutoCompleteTextView) findViewById(R.id.ambulanceRegNo);
+        ambDriver = (AutoCompleteTextView) findViewById(R.id.ambulanceDriver);
     }
 
     public void signUp(View view) {
-//        checking if name is not entered
-        if (name.getText().toString().equals("")) {
-            name.setError("Please enter your name");
-            name.requestFocus();
+        if (hosName.getText().toString().equals("")) {
+            hosName.setError("Please enter hospital name");
+            hosName.requestFocus();
             return;
         }
-//        checking if email is not entered
-        if (email.getText().toString().equals("")) {
-            email.setError("Please enter your email id");
-            email.requestFocus();
+        if (ambId.getText().toString().equals("")) {
+            ambId.setError("Please enter ambulance id");
+            ambId.requestFocus();
             return;
         }
-//        checking if phone number is not entered
-        if (phone.getText().toString().equals("")) {
-            phone.setError("Please enter your phone number");
-            phone.requestFocus();
+        if (ambReg.getText().toString().equals("")) {
+            ambReg.setError("Please enter ambulance registration number");
+            ambReg.requestFocus();
             return;
         }
-//        checking if phone number is valid (greater than 10 digits)
-        if (phone.getText().toString().length() < 10) {
-            phone.setError("Please enter a valid phone number");
-            phone.requestFocus();
+        if (ambDriver.getText().toString().equals("")) {
+            ambDriver.setError("Please enter ambulance driver");
+            ambDriver.requestFocus();
             return;
         }
-//        checking if email is valid (if it contains '@' symbol)
-        if (!email.getText().toString().contains("@")) {
-            email.setError("Please enter a valid email id");
-            email.requestFocus();
-            return;
-        }
+
+        editor.putString("hosName",hosName.getText().toString());
+        editor.putString("ambId",ambId.getText().toString());
+        editor.putString("ambReg",ambReg.getText().toString());
+        editor.putString("ambDriver",ambDriver.getText().toString());
+        editor.apply();
 //        if everything is fine then send data to server db
-        new SendData(name.getText().toString(), email.getText().toString(), phone.getText().toString()).execute();
+        new SendData(hosName.getText().toString(), ambId.getText().toString(), ambReg.getText().toString(),ambDriver.getText().toString()).execute();
 
 
     }
 
     public class SendData extends AsyncTask<Void, Void, Void> {
 
-        String name, email, phone;
+        String name, id, reg,driver;
 
-        SendData(String name, String email, String phone) {
+        SendData(String name, String aId, String num,String dr) {
             this.name = name;
-            this.email = email;
-            this.phone = phone;
+            this.id = aId;
+            this.reg = num;
+            this.driver = dr;
         }
 
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            startActivity(new Intent(LoginActivity.this,MapsActivity.class));
+            startActivity(new Intent(LoginActivity.this, MainActivity.class));
         }
 
         @Override
@@ -113,29 +115,29 @@ public class LoginActivity extends AppCompatActivity {
 
             URL url = null;
             try {
-                url = new URL("https://maps.googleapis.com/maps/api/directions/json?origin=kumarswamy%20layout,Bangalore&destination=kathriguppe,Bangalore&key=%20AIzaSyDm0xyQGJ1mDIMezQZxpUjGbtadDpuhdiU");
-//https://maps.googleapis.com/maps/api/directions/json?origin=12.45,77.45&destination=12.55,77.85&key=%20AIzaSyDm0xyQGJ1mDIMezQZxpUjGbtadDpuhdiU
+                url = new URL("http://204.152.203.111/ec/");
                 HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
 
                 httpURLConnection.setDoInput(true);
                 httpURLConnection.setDoOutput(true);
-//                httpURLConnection.setRequestMethod("POST");
+                httpURLConnection.setRequestMethod("POST");
 
-//                Uri.Builder builder = new Uri.Builder();
-//                    builder.appendQueryParameter("name",name);
-//                    builder.appendQueryParameter("email",email);
-//                    builder.appendQueryParameter("phone",phone);
+                Uri.Builder builder = new Uri.Builder();
+                    builder.appendQueryParameter("hospName",name);
+                    builder.appendQueryParameter("ambId",id);
+                    builder.appendQueryParameter("ambReg",reg);
+                    builder.appendQueryParameter("ambDriver",driver);
 
 
-//                String query = builder.build().getEncodedQuery();
+                String query = builder.build().getEncodedQuery();
 
-//                OutputStream os = httpURLConnection.getOutputStream();
+                OutputStream os = httpURLConnection.getOutputStream();
 
-//                BufferedWriter mBufferedWriter = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
-//                mBufferedWriter.write(query);
-//                mBufferedWriter.flush();
-//                mBufferedWriter.close();
-//                os.close();
+                BufferedWriter mBufferedWriter = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
+                mBufferedWriter.write(query);
+                mBufferedWriter.flush();
+                mBufferedWriter.close();
+                os.close();
 
                 httpURLConnection.connect();
                 BufferedReader mBufferedInputStream = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()));
@@ -153,65 +155,10 @@ public class LoginActivity extends AppCompatActivity {
 
             Log.d("Response", Response);
 
-            parseResponse(Response);
 
             return null;
         }
 
-        private void parseResponse(String response) {
+   }
 
-
-            try {
-                JSONObject jsonObject = new JSONObject(response);
-                JSONArray routesArray = jsonObject.getJSONArray("routes");
-                JSONObject jsonObject1 = routesArray.getJSONObject(0);
-                JSONArray legsArray = jsonObject1.getJSONArray("legs");
-                JSONObject jsonObject2 = legsArray.getJSONObject(0);
-                JSONArray steps = jsonObject2.getJSONArray("steps");
-                for (int i = 0; i < steps.length(); i++) {
-                    JSONObject jsonObject3 = steps.getJSONObject(i);
-                    JSONObject loc = jsonObject3.getJSONObject("end_location");
-                    double lat = loc.getDouble("lat");
-                    double lon = loc.getDouble("lng");
-                    route.add(new LatLng(lat,lon));
-                    JSONObject loc2 = jsonObject3.getJSONObject("start_location");
-                    lat = loc2.getDouble("lat");
-                    lon = loc2.getDouble("lng");
-//                    Log.d("test", "lat " + lat + " lon " + lon);
-                    route.add(new LatLng(lat,lon));
-                }
-
-
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
-        }
-    }
-
-    public LatLng getLocationFromAddress(String strAddress) {
-
-        Geocoder coder = new Geocoder(this);
-        List<Address> address;
-        LatLng p1 = null;
-
-        try {
-            address = coder.getFromLocationName(strAddress, 5);
-            Log.d("what", "a:" + address);
-            if (address == null) {
-                return null;
-            }
-            Address location = address.get(0);
-            location.getLatitude();
-            location.getLongitude();
-
-            p1 = new LatLng((location.getLatitude()),
-                    (location.getLongitude()));
-
-            return p1;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
 }
