@@ -11,6 +11,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.akexorcist.googledirection.DirectionCallback;
 import com.akexorcist.googledirection.GoogleDirection;
@@ -31,7 +32,9 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
+import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -45,6 +48,8 @@ import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -55,6 +60,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     static GoogleApiClient googleApiClient;
     Location loc;
     String Response = "";
+    List<List<HashMap<String,String>>> result ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,14 +72,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mapFragment.getMapAsync(this);
         connectToGoogleApi();
 
-        Timer timer = new Timer();
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                new SendLoc().execute();
+        new getRoute().execute();
 
-            }
-        }, 1000, 5000);
+//        Timer timer = new Timer();
+//        timer.schedule(new TimerTask() {
+//            @Override
+//            public void run() {
+//                new SendLoc().execute();
+//
+//            }
+//        }, 1000, 5000);
 
 
     }
@@ -94,36 +102,36 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         mMap.moveCamera(CameraUpdateFactory.newLatLng(MainActivity.f));
 
-        GoogleDirection.withServerKey("AIzaSyDm0xyQGJ1mDIMezQZxpUjGbtadDpuhdiU")
-                .from(MainActivity.f)
-                .to(MainActivity.t)
-                .alternativeRoute(true)
-                .execute(new DirectionCallback() {
-                    @Override
-                    public void onDirectionSuccess(Direction direction, String rawBody) {
-                        ArrayList<LatLng> directionPositionList = direction.getRouteList().get(0).getLegList().get(0).getDirectionPoint();
-                        mMap.addPolyline(DirectionConverter.createPolyline(MapsActivity.this, directionPositionList, 5, Color.RED));
-                    }
-
-                    @Override
-                    public void onDirectionFailure(Throwable t) {
-
-                    }
-                });
+//        GoogleDirection.withServerKey("AIzaSyDm0xyQGJ1mDIMezQZxpUjGbtadDpuhdiU")
+//                .from(MainActivity.f)
+//                .to(MainActivity.t)
+//                .alternativeRoute(true)
+//                .execute(new DirectionCallback() {
+//                    @Override
+//                    public void onDirectionSuccess(Direction direction, String rawBody) {
+//                        ArrayList<LatLng> directionPositionList = direction.getRouteList().get(0).getLegList().get(0).getDirectionPoint();
+//                        mMap.addPolyline(DirectionConverter.createPolyline(MapsActivity.this, directionPositionList, 5, Color.RED));
+//                    }
+//
+//                    @Override
+//                    public void onDirectionFailure(Throwable t) {
+//
+//                    }
+//                });
     }
 
-    public class getMarkers extends AsyncTask<Void,Void,Void>{
+    public class getRoute extends AsyncTask<Void,Void,Void>{
 
         @Override
         protected Void doInBackground(Void... params) {
             URL url;
             try {
-                url = new URL("http://204.152.203.111/ec/");
+                url = new URL("https://maps.googleapis.com/maps/api/directions/json?origin="+MainActivity.f.latitude+","+MainActivity.f.longitude+"&destination="+MainActivity.t.latitude+","+MainActivity.t.longitude+"&waypoints=12.921914,77.560207&key=AIzaSyDm0xyQGJ1mDIMezQZxpUjGbtadDpuhdiU");
                 HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
 
                 httpURLConnection.setDoInput(true);
                 httpURLConnection.setDoOutput(true);
-                httpURLConnection.setRequestMethod("POST");
+//                httpURLConnection.setRequestMethod("POST");
 
                 httpURLConnection.connect();
                 BufferedReader mBufferedInputStream = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()));
@@ -133,7 +141,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
                 mBufferedInputStream.close();
                 Log.d("response", Response);
-                parseJson(Response);
+                result = parse(new JSONObject(Response));
+
+//                for (int z=0;z<plot.size();z++){
+//                    Log.d("plotting",plot.get(z)+"");
+//                }
 
             } catch (MalformedURLException e) {
                 e.printStackTrace();
@@ -143,9 +155,49 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
             Response = "";
             return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+
+            Toast.makeText(MapsActivity.this, ""+result.size(), Toast.LENGTH_SHORT).show();
+
+            ArrayList<LatLng> points ;
+            PolylineOptions lineOptions = null;
+
+            // Traversing through all the routes
+            for(int i=0;i<result.size();i++){
+                points = new ArrayList<>();
+                lineOptions = new PolylineOptions();
+
+                // Fetching i-th route
+                List<HashMap<String, String>> path = result.get(i);
+
+                // Fetching all the points in i-th route
+                for(int j=0;j<path.size();j++){
+                    HashMap<String,String> point = path.get(j);
+
+                    double lat = Double.parseDouble(point.get("lat"));
+                    double lng = Double.parseDouble(point.get("lng"));
+                    LatLng position = new LatLng(lat, lng);
+
+                    points.add(position);
+                }
+
+                // Adding all the points in the route to LineOptions
+                lineOptions.addAll(points);
+                lineOptions.width(5);
+                lineOptions.color(Color.RED);
+            }
+
+            // Drawing polyline in the Google Map for the i-th route
+            mMap.addPolyline(lineOptions);
         }
     }
 
@@ -267,5 +319,107 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
+    public List<List<HashMap<String,String>>> parse(JSONObject jObject){
+
+        List<List<HashMap<String, String>>> routes = new ArrayList<>() ;
+        JSONArray jRoutes;
+        JSONArray jLegs ;
+        JSONArray jSteps ;
+        JSONObject inRoutes;
+        JSONObject inLegs;
+
+        try {
+
+            jRoutes = jObject.getJSONArray("routes");
+
+            /** Traversing all routes */
+            for(int i=0;i<jRoutes.length();i++){
+                inRoutes = jRoutes.getJSONObject(i);
+                jLegs =  inRoutes.getJSONArray("legs");
+                ArrayList path = new ArrayList<>();
+
+                /** Traversing all legs */
+                for(int j=0;j<jLegs.length();j++){
+                    inLegs = jLegs.getJSONObject(j);
+                    jSteps = inLegs.getJSONArray("steps");
+
+                    /** Traversing all steps */
+                    for(int k=0;k<jSteps.length();k++){
+
+//                        String html_instructions = jSteps.getJSONObject(k).getString("html_instructions");
+//                        String travel_mode = jSteps.getJSONObject(k).getString("travel_mode");
+//                        String maneuver = jSteps.getJSONObject(k).getString("maneuver");
+//
+//                        String distance_text = jSteps.getJSONObject(k).getJSONObject("distance").getString("text");
+//                        String distance_value = jSteps.getJSONObject(k).getJSONObject("distance").getString("value");
+//
+//                        String duration_text = jSteps.getJSONObject(k).getJSONObject("duration").getString("text");
+//                        String duration_value = jSteps.getJSONObject(k).getJSONObject("duration").getString("value");
+//
+//                        String start_lat = jSteps.getJSONObject(k).getJSONObject("start_location").getString("lat");
+//                        String start_lon = jSteps.getJSONObject(k).getJSONObject("start_location").getString("lng");
+//
+//                        String end_lat = jSteps.getJSONObject(k).getJSONObject("end_location").getString("lat");
+//                        String end_lon = jSteps.getJSONObject(k).getJSONObject("end_location").getString("lng");
+
+                        String polyline = "";
+                        polyline = (String)((JSONObject)((JSONObject)jSteps.get(k)).get("polyline")).get("points");
+                        List<LatLng> list = decodePoly(polyline);
+
+
+                        /** Traversing all points */
+                        for(int l=0;l<list.size();l++){
+                            HashMap<String, String> hm = new HashMap<String, String>();
+                            hm.put("lat", Double.toString(((LatLng)list.get(l)).latitude) );
+                            hm.put("lng", Double.toString(((LatLng)list.get(l)).longitude) );
+                            path.add(hm);
+                        }
+                    }
+                    routes.add(path);
+                }
+            }
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }catch (Exception e){
+        }
+
+
+        return routes;
+    }
+
+    private List<LatLng> decodePoly(String encoded) {
+
+        List<LatLng> poly = new ArrayList<LatLng>();
+        int index = 0, len = encoded.length();
+        int lat = 0, lng = 0;
+
+        while (index < len) {
+            int b, shift = 0, result = 0;
+            do {
+                b = encoded.charAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+            lat += dlat;
+
+            shift = 0;
+            result = 0;
+            do {
+                b = encoded.charAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+            lng += dlng;
+
+            LatLng p = new LatLng((((double) lat / 1E5)),
+                    (((double) lng / 1E5)));
+            poly.add(p);
+        }
+
+        return poly;
+    }
 
 }
