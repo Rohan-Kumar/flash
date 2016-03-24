@@ -18,6 +18,7 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -44,6 +45,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
@@ -54,6 +57,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     String Response = "";
     List<List<HashMap<String, String>>> result;
     ArrayList<LatLng> signals = new ArrayList<>();
+    double overall_dist=0,signal_to_final=0;
+    String direction = "";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,17 +77,38 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         signals.add(new LatLng(12.92187, 77.56016));
         signals.add(new LatLng(12.91672, 77.60976));
 
+        overall_dist = distance(MainActivity.f.latitude,MainActivity.f.longitude,MainActivity.t.latitude,MainActivity.t.longitude);
+        signal_to_final = distance(signals.get(MainActivity.pos).latitude,signals.get(MainActivity.pos).longitude,MainActivity.t.latitude,MainActivity.t.longitude);
+
 
         new getRoute().execute();
 
-//        Timer timer = new Timer();
-//        timer.schedule(new TimerTask() {
-//            @Override
-//            public void run() {
-//                new SendLoc().execute();
-//
-//            }
-//        }, 1000, 5000);
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                if (distance(loc.getLatitude(),loc.getLongitude(),MainActivity.t.latitude,MainActivity.t.longitude)<signal_to_final){
+                    // send stop
+                }
+                else if (distance(loc.getLatitude(),loc.getLongitude(),signals.get(MainActivity.pos).latitude,signals.get(MainActivity.pos).longitude)<0.5){
+                    // sending to alter the signal
+                    if (direction.contains("E")){
+
+                    }
+                    else if (direction.contains("W")){
+
+                    }
+                    else if (direction.contains("N")){
+
+                    }
+                    else if (direction.contains("S")){
+
+                    }
+
+                }
+
+            }
+        }, 1000, 5000);
 
 
     }
@@ -100,7 +127,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(MainActivity.f));
+        CameraUpdate yourLocation = CameraUpdateFactory.newLatLngZoom(MainActivity.f, 10);
+        mMap.animateCamera(yourLocation);
+
 
 //        GoogleDirection.withServerKey("AIzaSyDm0xyQGJ1mDIMezQZxpUjGbtadDpuhdiU")
 //                .from(MainActivity.f)
@@ -131,7 +160,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                 httpURLConnection.setDoInput(true);
                 httpURLConnection.setDoOutput(true);
-//                httpURLConnection.setRequestMethod("POST");
 
                 httpURLConnection.connect();
                 BufferedReader mBufferedInputStream = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()));
@@ -143,9 +171,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 Log.d("response", Response);
                 result = parse(new JSONObject(Response));
 
-//                for (int z=0;z<plot.size();z++){
-//                    Log.d("plotting",plot.get(z)+"");
-//                }
 
             } catch (MalformedURLException e) {
                 e.printStackTrace();
@@ -196,103 +221,72 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 lineOptions.color(Color.RED);
             }
 
-            int sig_point=5;
+            int sig_point=10;
             for (int x = 0; x < points.size(); x++) {
                 Log.d("testing",points.get(x)+"\n");
                 if (MainActivity.pos != 0)
-                    if ((Math.abs(points.get(x).latitude-signals.get(MainActivity.pos).latitude)<0.0001)&&(Math.abs(points.get(x).longitude-signals.get(MainActivity.pos).longitude)<0.0001)){
+                    if ((Math.abs(points.get(x).latitude - signals.get(MainActivity.pos).latitude)<0.0001)&&(Math.abs(points.get(x).longitude-signals.get(MainActivity.pos).longitude)<0.0001)){
                         sig_point = x;
-                        Toast.makeText(MapsActivity.this, "Got it", Toast.LENGTH_SHORT).show();
+                        Log.d("found location","Got the signal "+points.get(x));
                     }
             }
 
 
-            double angle = angleFromCoordinate(points.get(sig_point-4).latitude,points.get(sig_point-4).longitude,points.get(sig_point+3).latitude,points.get(sig_point+3).longitude);
 
-            mMap.addMarker(new MarkerOptions().position(points.get(sig_point-4)));
-            mMap.addMarker(new MarkerOptions().position(points.get(sig_point+3)));
+            direction = bearing(points.get(sig_point - 5).latitude, points.get(sig_point - 5).longitude, signals.get(MainActivity.pos).latitude, signals.get(MainActivity.pos).longitude);
 
-            Toast.makeText(MapsActivity.this, "sigpoint:"+sig_point+"angle: "+angle, Toast.LENGTH_SHORT).show();
+            Toast.makeText(MapsActivity.this, direction, Toast.LENGTH_SHORT).show();
+
+            mMap.addMarker(new MarkerOptions().position(points.get(sig_point - 5)));
+            mMap.addMarker(new MarkerOptions().position(points.get(sig_point + 5)));
 
 
             // Drawing polyline in the Google Map for the i-th route
             mMap.addPolyline(lineOptions);
         }
     }
-    private double angleFromCoordinate(double lat1, double long1, double lat2,
-                                       double long2) {
 
-        double dLon = (long2 - long1);
-
-        double y = Math.sin(dLon) * Math.cos(lat2);
-        double x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1)
-                * Math.cos(lat2) * Math.cos(dLon);
-
-        double brng = Math.atan2(y, x);
-
-        brng = Math.toDegrees(brng);
-        brng = (brng + 360) % 360;
-        brng = 360 - brng;
-
-        return brng;
-    }
-    private void parseJson(String response) {
-
-
-    }
-
-    public class SendLoc extends AsyncTask<Void, Void, Void> {
-
-        @Override
-        protected Void doInBackground(Void... params) {
-            URL url;
-            try {
-                url = new URL("http://204.152.203.111/ec/");
-                HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
-
-                httpURLConnection.setDoInput(true);
-                httpURLConnection.setDoOutput(true);
-                httpURLConnection.setRequestMethod("POST");
-
-                Uri.Builder builder = new Uri.Builder()
-                        .appendQueryParameter("lat", loc.getLatitude() + "")
-                        .appendQueryParameter("long", loc.getLongitude() + "");
-
-
-                String query = builder.build().getEncodedQuery();
-
-                Log.d("test", query);
-
-                OutputStream os = httpURLConnection.getOutputStream();
-
-                BufferedWriter mBufferedWriter = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
-                mBufferedWriter.write(query);
-                mBufferedWriter.flush();
-                mBufferedWriter.close();
-                os.close();
-
-                httpURLConnection.connect();
-                BufferedReader mBufferedInputStream = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream()));
-                String inline;
-                while ((inline = mBufferedInputStream.readLine()) != null) {
-                    Response += inline;
-                }
-                mBufferedInputStream.close();
-                Log.d("response", Response);
-
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
-            } catch (ProtocolException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            Response = "";
-            return null;
+    protected static String bearing(double lat1, double lon1, double lat2, double lon2){
+        double longitude1 = lon1;
+        double longitude2 = lon2;
+        double latitude1 = Math.toRadians(lat1);
+        double latitude2 = Math.toRadians(lat2);
+        double longDiff= Math.toRadians(longitude2-longitude1);
+        double y= Math.sin(longDiff)*Math.cos(latitude2);
+        double x=Math.cos(latitude1)*Math.sin(latitude2)-Math.sin(latitude1)*Math.cos(latitude2)*Math.cos(longDiff);
+        double resultDegree= (Math.toDegrees(Math.atan2(y, x))+360)%360;
+        String coordNames[] = {"N","NNE", "NE","ENE","E", "ESE","SE","SSE", "S","SSW", "SW","WSW", "W","WNW", "NW","NNW", "N"};
+        double directionid = Math.round(resultDegree / 22.5);
+        // no of array contain 360/16=22.5
+        if (directionid < 0) {
+            directionid = directionid + 16;
+            //no. of contains in array
         }
+        String compasLoc=coordNames[(int) directionid];
+
+        return compasLoc;
     }
+
+    private static double distance(double lat1, double lon1, double lat2, double lon2) {
+        double theta = lon1 - lon2;
+        double dist = Math.sin(deg2rad(lat1)) * Math.sin(deg2rad(lat2)) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.cos(deg2rad(theta));
+        dist = Math.acos(dist);
+        dist = rad2deg(dist);
+        dist = dist * 60 * 1.1515;
+
+            dist = dist * 1.609344;
+
+        return (dist);
+    }
+    private static double deg2rad(double deg) {
+        return (deg * Math.PI / 180.0);
+    }
+    private static double rad2deg(double rad) {
+        return (rad * 180 / Math.PI);
+    }
+
+
+
 
     public void connectToGoogleApi() {
 
@@ -353,6 +347,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void onConnectionFailed(ConnectionResult connectionResult) {
 
     }
+
 
     public List<List<HashMap<String, String>>> parse(JSONObject jObject) {
 
