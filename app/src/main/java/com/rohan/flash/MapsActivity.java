@@ -231,8 +231,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     }
             }
 
-
-
             direction = bearing(points.get(sig_point - 5).latitude, points.get(sig_point - 5).longitude, signals.get(MainActivity.pos).latitude, signals.get(MainActivity.pos).longitude);
 
             Toast.makeText(MapsActivity.this, direction, Toast.LENGTH_SHORT).show();

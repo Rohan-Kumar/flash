@@ -44,8 +44,6 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        startActivity(new Intent(LoginActivity.this, MainActivity.class));
-
         init();
     }
 
@@ -107,7 +105,9 @@ public class LoginActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            startActivity(new Intent(LoginActivity.this, MainActivity.class));
+            editor.putInt("LOGGED_IN",1);
+            editor.apply();
+            startActivity(new Intent(LoginActivity.this, Main2Activity.class));
         }
 
         @Override

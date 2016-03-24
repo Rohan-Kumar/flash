@@ -42,7 +42,7 @@ public class SplashActivity extends AppCompatActivity {
                     } else {
 
                         // go to first screen
-                        Intent i = new Intent(getApplicationContext(), LoginActivity.class);
+                        Intent i = new Intent(getApplicationContext(), Main2Activity.class);
                         startActivity(i);
                         finish();
                     }
