@@ -7,19 +7,27 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.model.LatLng;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
     AutoCompleteTextView from,to;
     public static LatLng f,t;
+    public static int pos = 0;
+    Spinner spinner;
+    public static String waypoints[] = {"","&waypoints=12.917635,77.623336","&waypoints=12.917180,77.573923","&waypoints=12.921874,77.560160","&waypoints=12.916728,77.609765"};
+    List<String> categories = new ArrayList<String>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +36,34 @@ public class MainActivity extends AppCompatActivity {
 
         from = (AutoCompleteTextView) findViewById(R.id.from);
         to = (AutoCompleteTextView) findViewById(R.id.to);
+
+        spinner = (Spinner) findViewById(R.id.spinner);
+
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                pos = position;
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+
+        categories.add("Select your waypoint");
+        categories.add("Silk board");
+        categories.add("Banashankri");
+        categories.add("DG signal");
+        categories.add("Udpi garden");
+        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, categories);
+
+        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+        spinner.setAdapter(dataAdapter);
+
+
+
     }
 
     public void route(View view) {

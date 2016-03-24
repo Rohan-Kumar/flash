@@ -6,17 +6,12 @@ import android.graphics.Color;
 import android.location.Location;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.provider.SyncStateContract;
+import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
-import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.akexorcist.googledirection.DirectionCallback;
-import com.akexorcist.googledirection.GoogleDirection;
-import com.akexorcist.googledirection.model.Direction;
-import com.akexorcist.googledirection.util.DirectionConverter;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -29,7 +24,6 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import org.json.JSONArray;
@@ -50,8 +44,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
@@ -60,7 +52,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     static GoogleApiClient googleApiClient;
     Location loc;
     String Response = "";
-    List<List<HashMap<String,String>>> result ;
+    List<List<HashMap<String, String>>> result;
+    ArrayList<LatLng> signals = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,6 +64,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
         connectToGoogleApi();
+
+        signals.add(new LatLng(0, 0));
+        signals.add(new LatLng(12.91763, 77.62333));
+        signals.add(new LatLng(12.91718, 77.57392));
+        signals.add(new LatLng(12.92187, 77.56016));
+        signals.add(new LatLng(12.91672, 77.60976));
+
 
         new getRoute().execute();
 
@@ -120,13 +120,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 //                });
     }
 
-    public class getRoute extends AsyncTask<Void,Void,Void>{
+    public class getRoute extends AsyncTask<Void, Void, Void> {
 
         @Override
         protected Void doInBackground(Void... params) {
             URL url;
             try {
-                url = new URL("https://maps.googleapis.com/maps/api/directions/json?origin="+MainActivity.f.latitude+","+MainActivity.f.longitude+"&destination="+MainActivity.t.latitude+","+MainActivity.t.longitude+"&waypoints=12.921914,77.560207&key=AIzaSyDm0xyQGJ1mDIMezQZxpUjGbtadDpuhdiU");
+                url = new URL("https://maps.googleapis.com/maps/api/directions/json?origin=" + MainActivity.f.latitude + "," + MainActivity.f.longitude + "&destination=" + MainActivity.t.latitude + "," + MainActivity.t.longitude + MainActivity.waypoints[MainActivity.pos] + "&key=AIzaSyDm0xyQGJ1mDIMezQZxpUjGbtadDpuhdiU");
                 HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
 
                 httpURLConnection.setDoInput(true);
@@ -166,13 +166,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
 
-            Toast.makeText(MapsActivity.this, ""+result.size(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(MapsActivity.this, "" + result.size(), Toast.LENGTH_SHORT).show();
 
-            ArrayList<LatLng> points ;
+            ArrayList<LatLng> points = new ArrayList<>();
             PolylineOptions lineOptions = null;
 
             // Traversing through all the routes
-            for(int i=0;i<result.size();i++){
+            for (int i = 0; i < result.size(); i++) {
                 points = new ArrayList<>();
                 lineOptions = new PolylineOptions();
 
@@ -180,8 +180,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 List<HashMap<String, String>> path = result.get(i);
 
                 // Fetching all the points in i-th route
-                for(int j=0;j<path.size();j++){
-                    HashMap<String,String> point = path.get(j);
+                for (int j = 0; j < path.size(); j++) {
+                    HashMap<String, String> point = path.get(j);
 
                     double lat = Double.parseDouble(point.get("lat"));
                     double lng = Double.parseDouble(point.get("lng"));
@@ -196,17 +196,52 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 lineOptions.color(Color.RED);
             }
 
+            int sig_point=5;
+            for (int x = 0; x < points.size(); x++) {
+                Log.d("testing",points.get(x)+"\n");
+                if (MainActivity.pos != 0)
+                    if ((Math.abs(points.get(x).latitude-signals.get(MainActivity.pos).latitude)<0.0001)&&(Math.abs(points.get(x).longitude-signals.get(MainActivity.pos).longitude)<0.0001)){
+                        sig_point = x;
+                        Toast.makeText(MapsActivity.this, "Got it", Toast.LENGTH_SHORT).show();
+                    }
+            }
+
+
+            double angle = angleFromCoordinate(points.get(sig_point-4).latitude,points.get(sig_point-4).longitude,points.get(sig_point+3).latitude,points.get(sig_point+3).longitude);
+
+            mMap.addMarker(new MarkerOptions().position(points.get(sig_point-4)));
+            mMap.addMarker(new MarkerOptions().position(points.get(sig_point+3)));
+
+            Toast.makeText(MapsActivity.this, "sigpoint:"+sig_point+"angle: "+angle, Toast.LENGTH_SHORT).show();
+
+
             // Drawing polyline in the Google Map for the i-th route
             mMap.addPolyline(lineOptions);
         }
     }
+    private double angleFromCoordinate(double lat1, double long1, double lat2,
+                                       double long2) {
 
+        double dLon = (long2 - long1);
+
+        double y = Math.sin(dLon) * Math.cos(lat2);
+        double x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1)
+                * Math.cos(lat2) * Math.cos(dLon);
+
+        double brng = Math.atan2(y, x);
+
+        brng = Math.toDegrees(brng);
+        brng = (brng + 360) % 360;
+        brng = 360 - brng;
+
+        return brng;
+    }
     private void parseJson(String response) {
 
 
     }
 
-    public class SendLoc extends AsyncTask<Void,Void,Void>{
+    public class SendLoc extends AsyncTask<Void, Void, Void> {
 
         @Override
         protected Void doInBackground(Void... params) {
@@ -220,8 +255,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 httpURLConnection.setRequestMethod("POST");
 
                 Uri.Builder builder = new Uri.Builder()
-                        .appendQueryParameter("lat", loc.getLatitude()+"")
-                        .appendQueryParameter("long", loc.getLongitude()+"");
+                        .appendQueryParameter("lat", loc.getLatitude() + "")
+                        .appendQueryParameter("long", loc.getLongitude() + "");
 
 
                 String query = builder.build().getEncodedQuery();
@@ -319,12 +354,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
-    public List<List<HashMap<String,String>>> parse(JSONObject jObject){
+    public List<List<HashMap<String, String>>> parse(JSONObject jObject) {
 
-        List<List<HashMap<String, String>>> routes = new ArrayList<>() ;
+        List<List<HashMap<String, String>>> routes = new ArrayList<>();
         JSONArray jRoutes;
-        JSONArray jLegs ;
-        JSONArray jSteps ;
+        JSONArray jLegs;
+        JSONArray jSteps;
         JSONObject inRoutes;
         JSONObject inLegs;
 
@@ -333,18 +368,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             jRoutes = jObject.getJSONArray("routes");
 
             /** Traversing all routes */
-            for(int i=0;i<jRoutes.length();i++){
+            for (int i = 0; i < jRoutes.length(); i++) {
                 inRoutes = jRoutes.getJSONObject(i);
-                jLegs =  inRoutes.getJSONArray("legs");
+                jLegs = inRoutes.getJSONArray("legs");
                 ArrayList path = new ArrayList<>();
 
                 /** Traversing all legs */
-                for(int j=0;j<jLegs.length();j++){
+                for (int j = 0; j < jLegs.length(); j++) {
                     inLegs = jLegs.getJSONObject(j);
                     jSteps = inLegs.getJSONArray("steps");
 
                     /** Traversing all steps */
-                    for(int k=0;k<jSteps.length();k++){
+                    for (int k = 0; k < jSteps.length(); k++) {
 
 //                        String html_instructions = jSteps.getJSONObject(k).getString("html_instructions");
 //                        String travel_mode = jSteps.getJSONObject(k).getString("travel_mode");
@@ -363,15 +398,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 //                        String end_lon = jSteps.getJSONObject(k).getJSONObject("end_location").getString("lng");
 
                         String polyline = "";
-                        polyline = (String)((JSONObject)((JSONObject)jSteps.get(k)).get("polyline")).get("points");
+                        polyline = (String) ((JSONObject) ((JSONObject) jSteps.get(k)).get("polyline")).get("points");
                         List<LatLng> list = decodePoly(polyline);
 
 
                         /** Traversing all points */
-                        for(int l=0;l<list.size();l++){
+                        for (int l = 0; l < list.size(); l++) {
                             HashMap<String, String> hm = new HashMap<String, String>();
-                            hm.put("lat", Double.toString(((LatLng)list.get(l)).latitude) );
-                            hm.put("lng", Double.toString(((LatLng)list.get(l)).longitude) );
+                            hm.put("lat", Double.toString(((LatLng) list.get(l)).latitude));
+                            hm.put("lng", Double.toString(((LatLng) list.get(l)).longitude));
                             path.add(hm);
                         }
                     }
@@ -381,7 +416,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         } catch (JSONException e) {
             e.printStackTrace();
-        }catch (Exception e){
+        } catch (Exception e) {
         }
 
 
