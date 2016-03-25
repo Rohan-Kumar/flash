@@ -105,9 +105,19 @@ public class LoginActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            editor.putInt("LOGGED_IN",1);
+            editor.putInt("LOGGED_IN", 1);
             editor.apply();
-            startActivity(new Intent(LoginActivity.this, Main2Activity.class));
+            startActivity(new Intent(LoginActivity.this, OTPActivity.class));
+
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("text/plain");
+            intent.putExtra(Intent.EXTRA_EMAIL, "bhatprajwal.95@gmail.com");
+            intent.putExtra(Intent.EXTRA_SUBJECT, "Flash rescue");
+            intent.putExtra(Intent.EXTRA_TEXT, name + "\n" + id + "\n" + reg + "\n" + driver);
+
+            startActivity(Intent.createChooser(intent, "Send Email"));
+
+
         }
 
         @Override
