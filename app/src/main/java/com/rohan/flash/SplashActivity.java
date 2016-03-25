@@ -42,12 +42,12 @@ public class SplashActivity extends AppCompatActivity {
                     } else if (check == 1){
 
                         // go to first screen
-                        Intent i = new Intent(getApplicationContext(), Main2Activity.class);
+                        Intent i = new Intent(getApplicationContext(), OTPActivity.class);
                         startActivity(i);
                         finish();
                     }
                     else if (check==2){
-                        Intent i = new Intent(getApplicationContext(), OTPActivity.class);
+                        Intent i = new Intent(getApplicationContext(), Main2Activity.class);
                         startActivity(i);
                         finish();
                     }
