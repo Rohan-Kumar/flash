@@ -42,6 +42,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Get Route"
+            android:layout_marginTop="10dp"
+            android:background="@color/colorPrimary"
             android:id="@+id/route"
             android:onClick="route"
             android:layout_gravity="center_horizontal" />

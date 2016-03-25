@@ -87,30 +87,35 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                if (distance(loc.getLatitude(), loc.getLongitude(), MainActivity.t.latitude, MainActivity.t.longitude) < signal_to_final) {
-                    // send stop
-                } else if (distance(loc.getLatitude(), loc.getLongitude(), signals.get(MainActivity.pos).latitude, signals.get(MainActivity.pos).longitude) < 0.5) {
-                    // sending to alter the signal
-                    if (direction.contains("E")) {
-                        new change_signal(MainActivity.pos + "", "E");
+                try {
+                    if (distance(loc.getLatitude(), loc.getLongitude(), MainActivity.t.latitude, MainActivity.t.longitude) < signal_to_final) {
+                        // send stop
+                    } else if (distance(loc.getLatitude(), loc.getLongitude(), signals.get(MainActivity.pos).latitude, signals.get(MainActivity.pos).longitude) < 0.5) {
+                        // sending to alter the signal
+                        if (direction.contains("E")) {
+                            new change_signal(MainActivity.pos + "", "E");
 
-                    } else if (direction.contains("W")) {
-                        new change_signal(MainActivity.pos + "", "E");
+                        } else if (direction.contains("W")) {
+                            new change_signal(MainActivity.pos + "", "E");
 
-                    } else if (direction.contains("N")) {
-                        new change_signal(MainActivity.pos + "", "N");
+                        } else if (direction.contains("N")) {
+                            new change_signal(MainActivity.pos + "", "N");
 
-                    } else if (direction.contains("S")) {
-                        new change_signal(MainActivity.pos + "", "S");
+                        } else if (direction.contains("S")) {
+                            new change_signal(MainActivity.pos + "", "S");
 
-                    } else
-                        new change_signal(MainActivity.pos + "", "D");
+                        } else
+                            new change_signal(MainActivity.pos + "", "D");
 
+
+                    }
+
+                } catch (NullPointerException e){
 
                 }
 
             }
-        }, 1000, 5000);
+        }, 5000, 5000);
 
 
     }
@@ -236,9 +241,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             direction = bearing(points.get(sig_point - 5).latitude, points.get(sig_point - 5).longitude, signals.get(MainActivity.pos).latitude, signals.get(MainActivity.pos).longitude);
 
             Toast.makeText(MapsActivity.this, direction, Toast.LENGTH_SHORT).show();
-
-            mMap.addMarker(new MarkerOptions().position(points.get(sig_point - 5)));
-            mMap.addMarker(new MarkerOptions().position(points.get(sig_point + 5)));
 
 
             // Drawing polyline in the Google Map for the i-th route
